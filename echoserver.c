@@ -4,7 +4,7 @@
 #include<string.h>
 #include<stdlib.h>
 #include"./protocol.h"
-#include"./client_list.h"
+#include"./queue.h"
 #include<unistd.h>
 #define ERROR_EXIT(msg) \
         do{ perror(msg); exit(EXIT_FAILURE); }while(0)
@@ -35,7 +35,7 @@ int main(void)
     FD_ZERO(&temp);
     FD_SET(listenfd,&all);
     int ready;
-    struct client_list* cl = initList(); 
+    struct queue* q = InitQueue(); 
     while(1)
     {
         temp = all;
@@ -47,11 +47,8 @@ int main(void)
             acceptfd = accept(listenfd, NULL, NULL);
             if(acceptfd < 0)
                 ERROR_EXIT("accept");
-            struct client_list* element = (struct client_list*)malloc(sizeof(struct client_list));
-            element->confd = acceptfd;
-            element->next = NULL;
-            insertFromTail(cl, element);
-            if(elementCount(cl) >= FD_SETSIZE)
+            Enque(q, acceptfd);
+            if(QueueLength(q) >= FD_SETSIZE)
                 ERROR_EXIT("Too many clients");
             FD_SET(acceptfd, &all);
             if(acceptfd > maxfd)
@@ -59,18 +56,18 @@ int main(void)
             if(--ready <= 0)
                 continue;
         }
-        struct client_list* ptr = cl->next;
+        struct node* ptr = q->head;
         while(ptr)
         {
-            if(FD_ISSET(ptr->confd, &temp))
+            if(FD_ISSET(ptr->data, &temp))
             {
-                int s = read(ptr->confd, &recv_pkg.length, 4); 
+                int s = read(ptr->data, &recv_pkg.length, 4); 
                 if(s == 0)
                 {
                     printf("client logoff\n");
-                    close(ptr->confd);
-                    FD_CLR(ptr->confd, &all);
-                    deleteElement(cl, ptr);    
+                    close(ptr->data);
+                    FD_CLR(ptr->data, &all);
+                    DeleteByVal(q, ptr->data);    
                 }
                 else if(s < 0)
                     ERROR_EXIT("read length");
@@ -78,20 +75,20 @@ int main(void)
                 {
                     int ss = 0;
                     ss = ntohl(recv_pkg.length);
-                    int pkgsize = read(ptr->confd, recv_pkg.content, ss);
+                    int pkgsize = read(ptr->data, recv_pkg.content, ss);
                     if(pkgsize < 0 )
                         ERROR_EXIT("read content");
                     else if(pkgsize == 0)
                     {
                         printf("Client logoff\n");
-                        close(ptr->confd);
-                        FD_CLR(ptr->confd, &all);
-                        deleteElement(cl, ptr);    
+                        close(ptr->data);
+                        FD_CLR(ptr->data, &all);
+                        DeleteByVal(q, ptr->data);    
                     }
                     else
                     {
                         printf("content is %s",recv_pkg.content);
-                        write(ptr->confd, &recv_pkg, ss + 4);
+                        write(ptr->data, &recv_pkg, ss + 4);
                         memset(&recv_pkg, 0, sizeof(recv_pkg));    
                     }
                 }
