@@ -1,13 +1,13 @@
 cli = echoclient.o
-srv = echoserver.o queue.o
+srv = echoserver.o
 client:$(cli)
 server:$(srv)
-echoserver.o:protocol.h queue.h
+echoserver.o:protocol.h 
 echoclient.o:protocol.h
 client:
-	gcc -o client $(cli)
+	g++ -o client $(cli)
 server:
-	gcc -o server $(srv)
+	g++ -o server $(srv)
 .PHONY:clean
 clean:
 	-rm -f $(cli) $(srv) client server
