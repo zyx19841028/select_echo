@@ -102,8 +102,8 @@ int main(int argc,char** argv)
                         continue;
                     // 由于是非阻塞的模式,所以当errno为EAGAIN时,表示当前缓冲区已无数据可读
                     // 在这里就当作是该次事件已处理处
-   		    if(errno == EAGAIN)
- continue;
+                    if(errno == EAGAIN)
+                        continue;
                     ERROR_EXIT("read length");
                 }
                 else
@@ -114,8 +114,8 @@ int main(int argc,char** argv)
                     {
                         if(errno == EINTR)
                             continue;
- if(errno == EAGAIN)
-     continue;
+                        if(errno == EAGAIN)
+                            continue;
                         ERROR_EXIT("read content");
                     }
                     else if(pkgsize == 0)
